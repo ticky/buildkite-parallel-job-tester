@@ -1,74 +1,70 @@
 steps:
-  - block: "📝 ${ANNOTATE_LABEL:-Annotate}"
+  - block: "🛤 Configure Parallel Jobs"
     fields:
-      - text: Annotation Body
-        key: body
-        default: |
-          <h4>Definition List</h4>
-          <dl class="flex flex-wrap mxn1">
-            <div class="m1">
-              <dt>New Files in PR</dt>
-              <dd>
-                <big><big>88</big></big>%<br>
-                115 of 131 lines<br>
-              </dd>
-            </div>
-            <div class="m1">
-              <dt>Files Changed in PR</dt>
-              <dd>
-                <big><big>89</big></big>%<br>
-                332 of 372 lines
-              </dd>
-            </div>
-            <div class="m1">
-              <dt>All Files</dt>
-              <dd>
-                <big><big>90</big></big>%<br>
-                22,998 of 25,484 lines
-              </dd>
-            </div>
-          </dl>
-          <h4>Tables</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>foo</th>
-                <th>bar</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>baz</td>
-                <td>bim</td>
-              </tr>
-            </tbody>
-          </table>
-
-      - select: Append
-        hint: "Append to the body of an existing annotation?"
-        key: append
-        default: append
+      - select: Jobs to Generate
+        hint: |
+          A large number of jobs will decrease the performance of this page! Be careful!
+        key: job-count
+        default: 50
         options:
-          - label: 'Yes'
-            value: append
-          - label: 'No'
-            value: no-append
+          - label: "5 Jobs"
+            value: 5
+          - label: "10 Jobs"
+            value: 10
+          - label: "50 Jobs"
+            value: 50
+          - label: "100 Jobs"
+            value: 100
+          - label: "150 Jobs"
+            value: 150
+          - label: "200 Jobs (Heaps!)"
+            value: 200
+          - label: "250 Jobs (Wow!)"
+            value: 250
+          - label: "500 Jobs (Careful!)"
+            value: 500
 
-      - select: Style
-        key: style
-        required: false
+      - select: Job Duration
+        hint: |
+          Each job will wait this long before exiting.
+          Beware, if you have few agents, a large number of jobs and a long duration, 
+          the pipeline will take a long time!
+        key: job-duration
+        default: 5
         options:
-          - label: ✏️ Default
-            value: default
-          - label: ℹ️ Information
-            value: info
-          - label: ⚠️ Warning
-            value: warning
-          - label: 🚫 Error
-            value: error
-          - label: ✅ Success
-            value: success
+          - label: "None"
+            value: 0
+          - label: "1 Second"
+            value: 1
+          - label: "5 Seconds"
+            value: 5
+          - label: "10 Seconds"
+            value: 10
+          - label: "30 Seconds"
+            value: 30
+          - label: "1 Minute"
+            value: 60
+          - label: "5 Minutes"
+            value: 300
+          - label: "10 Minutes"
+            value: 600
+          - label: "30 Minutes"
+            value: 1800
+          - label: "1 Hour"
+            value: 3600
 
-  - label: 👀
+  - label: ":pipeline:"
     command: |
-      buildkite-agent meta-data get body | buildkite-agent annotate --style "$(buildkite-agent meta-data get style)" $([[ $(buildkite-agent meta-data get append) == 'append' ]] && echo '--append'); env ANNOTATE_LABEL="Update" buildkite-agent pipeline upload
+      bash <<SCRIPT
+        set -euo pipefail
+
+        TESTER_JOB_DURATION=$(buildkite-agent meta-data get job-duration)
+        TESTER_JOB_COUNT=$(buildkite-agent meta-data get job-count)
+
+        buildkite-agent pipeline upload <<PIPELINEYAML
+          steps:
+            - command: "sleep \\\$TESTER_JOB_DURATION"
+              label: "Job %n"
+              parallelism: \\\$TESTER_JOB_COUNT
+        PIPELINEYAML
+      SCRIPT

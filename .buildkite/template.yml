@@ -1,5 +1,5 @@
-name: "📝 Annotation Tester"
-description: "Test writing Buildkite annotation bodies directly"
+name: "🛤 Parallel Job Tester"
+description: "Test using Buildkite parallel jobs"
 steps:
   - command: "buildkite-agent pipeline upload"
     label: ":pipeline:"
