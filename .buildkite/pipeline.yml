@@ -64,7 +64,7 @@ steps:
         buildkite-agent pipeline upload <<PIPELINEYAML
           steps:
             - command: "sleep \\\$TESTER_JOB_DURATION"
-              label: "Job %n"
+              label: "Parallel Jobs"
               parallelism: \\\$TESTER_JOB_COUNT
         PIPELINEYAML
       SCRIPT
